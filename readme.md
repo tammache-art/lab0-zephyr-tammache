@@ -59,3 +59,39 @@ The firmware was successfully programmed and verified on the nRF7002 DK.
 ### Why Zephyr Wraps CMake with West
 
 Zephyr uses West to provide a consistent workspace-aware interface around CMake and Ninja. West understands the Zephyr manifest, board targets, modules, build directories, and flashing/debugging runners. This allows the same workflow to configure, compile, flash, and debug applications across many supported boards without manually managing each underlying tool.
+
+## 4. Kconfig
+
+Kconfig controls the software configuration of a Zephyr application. The application’s `prj.conf` currently explicitly enables GPIO support:
+
+```text
+CONFIG_GPIO=y
+```
+
+After building, the resolved configuration was inspected in `LAB_1/build-direct/LAB_1/zephyr/.config`. The build enabled the following relevant symbols:
+
+```text
+CONFIG_SERIAL=y
+CONFIG_GPIO=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_PRINTK=y
+```
+
+### Log Levels
+
+| Value | Level   | Purpose                                  |
+| ----- | ------- | ---------------------------------------- |
+| `0`   | None    | Disables logging.                        |
+| `1`   | Error   | Reports critical errors.                 |
+| `2`   | Warning | Reports potentially harmful conditions.  |
+| `3`   | Info    | Reports general application information. |
+| `4`   | Debug   | Reports detailed debugging information.  |
+
+### `prj.conf` and `menuconfig`
+
+`prj.conf` contains the configuration values requested by the application. `menuconfig` provides an interactive interface for viewing Kconfig symbols, their dependencies, and their current values. Changes made through `menuconfig` affect the generated configuration in the build directory but should be added to `prj.conf` when they need to be preserved in the application source.
+
+### Verifying Configuration Symbols
+
+After building, the final resolved Kconfig symbols can be inspected in the generated `zephyr/.config` file inside the build directory. This verification is important because board defaults, dependencies, and conflicting options can change or reject values requested in `prj.conf`.
