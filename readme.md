@@ -52,7 +52,9 @@ west flash -d /Users/talalammache/lab0-zephyr-tammache/LAB_1/build-west --dev-id
 | `--dev-id <device-id>`    | Selects the specific connected debug probe or development board.   |
 | `--erase`                 | Erases the device’s flash memory before programming the new image. |
 
-The flash command and its terminal screenshot will be added after the nRF7002 DK is connected.
+The firmware was successfully programmed and verified on the nRF7002 DK.
+
+![Successful West flash](images/west-flash.png)
 
 ### Why Zephyr Wraps CMake with West
 
