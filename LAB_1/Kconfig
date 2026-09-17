@@ -1,0 +1,17 @@
+source "Kconfig.zephyr"
+
+menu "ESE5180 Lab 0 Configuration"
+
+choice SUM_IMPLEMENTATION
+	prompt "Sum output implementation"
+	default SUM_PRINT
+
+config SUM_PRINT
+	bool "Use printk for sum output"
+
+config SUM_LOG
+	bool "Use Logger for sum output"
+
+endchoice
+
+endmenu
