@@ -1,0 +1,10 @@
+tests:
+  bme280.raw:
+    platform_allow:
+      - qemu_cortex_m3
+    tags:
+      - bme280
+      - i2c
+      - unit
+    harness: ztest
+    
