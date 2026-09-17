@@ -4,19 +4,22 @@
 | --- | --- |
 | Talal Ammache | [tammache@engineering.upenn.edu](mailto:tammache@engineering.upenn.edu) |
 
-**GitHub Repository:** [https://github.com/tammache-art/lab0-zephyr-tammache](https://github.com/tammache-art/lab0-zephyr-tammache)
+**GitHub Repository URL:** [https://github.com/tammache-art/lab0-zephyr-tammache](https://github.com/tammache-art/lab0-zephyr-tammache)
 
 ## 3. Building with West
 
 ### West Build
 
-The application was built for the nRF5340 application core on the nRF7002 DK using:
+The application was built from the nRF Connect SDK terminal using:
 
 ```bash
-west build -p always \
-  -b nrf7002dk/nrf5340/cpuapp \
-  -d LAB_1/build-direct \
-  LAB_1
+west build \
+  --build-dir /Users/talalammache/lab0-zephyr-tammache/LAB_1/build-west \
+  /Users/talalammache/lab0-zephyr-tammache/LAB_1 \
+  --pristine \
+  --board nrf7002dk/nrf5340/cpuapp/ns \
+  --sysbuild \
+  -DBOARD_ROOT=/Users/talalammache/lab0-zephyr-tammache/LAB_1
 ```
 
 ![Successful West build](images/west-build.png)
@@ -26,17 +29,19 @@ west build -p always \
 - `west init`: Initializes a West workspace and obtains its manifest configuration.
 - `west update`: Downloads or updates the projects listed in the workspace manifest.
 - `west build`: Configures and compiles a Zephyr application using CMake and Ninja.
-- `west flash`: Programs a previously compiled Zephyr image onto the selected hardware.
+- `west flash`: Programs a previously built Zephyr image onto the selected hardware.
 
 ### Build Command Arguments
 
 | Argument | Meaning |
 | --- | --- |
 | `west build` | Invokes the West build command. |
-| `-p always` | Creates a pristine build and removes previous generated build state. |
-| `-b nrf7002dk/nrf5340/cpuapp` | Targets the nRF5340 application core on the nRF7002 DK. |
-| `-d LAB_1/build-direct` | Selects the directory used for generated build files. |
-| `LAB_1` | Specifies the application source directory. |
+| `--build-dir .../LAB_1/build-west` | Sets the directory where generated build files and compiled output are stored. |
+| `/Users/talalammache/.../LAB_1` | Specifies the application source directory. |
+| `--pristine` | Deletes previous build state before configuring and compiling. |
+| `--board nrf7002dk/nrf5340/cpuapp/ns` | Targets the non-secure nRF5340 application core on the nRF7002 DK. |
+| `--sysbuild` | Enables Zephyr’s multi-image system build process. |
+| `-DBOARD_ROOT=.../LAB_1` | Adds the application directory to CMake’s board search path. |
 
 ### West Flash
 
@@ -44,7 +49,7 @@ The application was flashed to the nRF7002 DK using:
 
 ```bash
 west flash \
-  -d LAB_1/build-direct \
+  -d /Users/talalammache/lab0-zephyr-tammache/LAB_1/build-direct \
   --dev-id 1050755774 \
   --erase
 ```
@@ -52,9 +57,9 @@ west flash \
 | Argument | Meaning |
 | --- | --- |
 | `west flash` | Invokes the West flash command. |
-| `-d LAB_1/build-direct` | Selects the directory containing the compiled firmware. |
-| `--dev-id 1050755774` | Selects the specific connected nRF7002 DK debug probe. |
-| `--erase` | Erases the board's flash memory before programming the new image. |
+| `-d .../LAB_1/build-direct` | Selects the build directory containing the compiled firmware. |
+| `--dev-id 1050755774` | Selects the connected nRF7002 DK debug probe. |
+| `--erase` | Erases the device’s flash before programming the new image. |
 
 The firmware was successfully programmed and verified on the nRF7002 DK.
 
@@ -62,19 +67,13 @@ The firmware was successfully programmed and verified on the nRF7002 DK.
 
 ### Why Zephyr Wraps CMake with West
 
-Zephyr uses West to provide a workspace-aware interface around CMake and Ninja. West understands the Zephyr manifest, modules, board targets, build directories, and hardware runners. This allows developers to build, flash, and debug applications through a consistent workflow without manually configuring each underlying tool.
+Zephyr uses West to provide a workspace-aware interface around CMake and Ninja. West understands the Zephyr manifest, board targets, modules, build directories, and hardware runners. This allows developers to configure, compile, flash, and debug applications through a consistent workflow.
 
 ## 4. Kconfig
 
-Kconfig controls which Zephyr subsystems and application features are compiled. Application configuration requests are stored in `prj.conf`.
+Kconfig controls the software configuration of a Zephyr application. Application configuration requests are stored in `prj.conf`.
 
-The final resolved configuration is generated in:
-
-```text
-LAB_1/build-direct/LAB_1/zephyr/.config
-```
-
-The application used the following relevant configuration symbols:
+The application enabled the following relevant options:
 
 ```text
 CONFIG_SERIAL=y
@@ -86,6 +85,12 @@ CONFIG_LOG=y
 CONFIG_LOG_DEFAULT_LEVEL=3
 ```
 
+The resolved configuration can be inspected in:
+
+```text
+LAB_1/build-direct/LAB_1/zephyr/.config
+```
+
 ### Log Levels
 
 | Value | Level | Purpose |
@@ -93,25 +98,25 @@ CONFIG_LOG_DEFAULT_LEVEL=3
 | `0` | None | Disables logging. |
 | `1` | Error | Reports critical failures. |
 | `2` | Warning | Reports potentially harmful conditions. |
-| `3` | Info | Reports normal application information. |
+| `3` | Info | Reports general application information. |
 | `4` | Debug | Reports detailed diagnostic information. |
 
 ### `prj.conf` and `menuconfig`
 
-`prj.conf` contains the configuration values requested by the application and is stored with the source code.
+`prj.conf` contains the configuration values requested by the application.
 
-`menuconfig` provides an interactive interface for examining symbols, dependencies, and resolved values. Changes made only through `menuconfig` affect the generated build configuration. Settings that should remain after a pristine build must be placed in `prj.conf`.
+`menuconfig` provides an interactive interface for examining Kconfig symbols, dependencies, and resolved values. Changes that must remain after a pristine build should be added to `prj.conf`.
 
 ### Verifying Configuration Symbols
 
-The generated `.config` file shows the final values after Zephyr processes board defaults and Kconfig dependencies. This is important because a requested value can be changed or disabled when its dependencies are not satisfied.
-
-The relevant values can be checked using:
+The final resolved values can be checked using:
 
 ```bash
 grep -E '^CONFIG_(SERIAL|GPIO|CONSOLE|UART_CONSOLE|PRINTK|LOG)=' \
   LAB_1/build-direct/LAB_1/zephyr/.config
 ```
+
+This verification is important because board defaults and symbol dependencies can change or reject values requested in `prj.conf`.
 
 ## 5. Devicetree
 
@@ -127,19 +132,19 @@ The Devicetree overlay defines an application-specific alias named `led5180`:
 };
 ```
 
-The application accesses the LED through the alias:
+The application accesses the LED through:
 
 ```c
 #define LED_NODE DT_ALIAS(led5180)
 ```
 
-The `led1` Devicetree node corresponds to physical LED 2 on the nRF7002 DK. This allowed the application to select the required LED without directly referencing the board node in `main.c`.
+The `led1` node corresponds to physical LED 2 on the nRF7002 DK.
 
 ### 5.2 Button-Controlled LED
 
-The application was extended to poll a button and toggle the LED whenever a valid button press was detected.
+The application polls a button and toggles the LED whenever a new button press is detected.
 
-A short polling interval was used to monitor the button. The application also tracked the previous button state so that the LED was toggled only on a new press, rather than continuously while the button was held.
+The previous button state is stored so that the LED toggles only once per press instead of continuously while the button is held.
 
 ### 5.3 Button Alias
 
@@ -154,33 +159,30 @@ A second application-specific alias was added for the button:
 };
 ```
 
-The source code accesses the button through:
+The application accesses the button through:
 
 ```c
 #define BUTTON_NODE DT_ALIAS(button5180)
 ```
 
-Using aliases keeps board-specific hardware information in the Devicetree overlay and keeps the application source independent from the board's original node names.
-
 ### Why Use a Devicetree Overlay?
 
-A Devicetree overlay customizes the application's hardware description without modifying Zephyr's shared board DTS files.
+A Devicetree overlay customizes the application’s hardware description without modifying Zephyr’s shared board files.
 
 This approach:
 
-- Keeps the SDK's original board definitions unchanged.
+- Keeps the original SDK board definitions unchanged.
 - Stores application-specific hardware choices in the repository.
-- Makes the application easier to move to another board.
-- Prevents local SDK changes from being lost during an update.
 - Separates hardware configuration from application behavior.
+- Makes the application easier to move to another board.
 
 ## 6. `printk` and Zephyr Logging
 
-Two implementations of a sum function were created.
+Two implementations of a sum function were created to compare direct console output with Zephyr’s logging subsystem.
 
 ### 6.1 `printk` Implementation
 
-The `sum_printk()` function calculates the sum and displays it using `printk()`:
+The `sum_printk()` function calculates the sum and displays the result using `printk()`:
 
 ```c
 int sum_printk(int a, int b)
@@ -199,9 +201,11 @@ For inputs `-5` and `12`, the application produced:
 printk: -5 + 12 = 7
 ```
 
-### 6.2 Logging Implementation
+![printk sum output](images/sum-printk.png)
 
-The `sum_log()` implementation uses Zephyr's logging subsystem. It:
+### 6.2 Zephyr Logging Implementation
+
+The `sum_log()` implementation uses Zephyr’s logging subsystem. It:
 
 - Logs the beginning of the calculation at the information level.
 - Produces a hexdump of the input values.
@@ -219,9 +223,11 @@ fb ff ff ff 0c 00 00 00
 <inf> sum_module: -5 + 12 = 7
 ```
 
+![Zephyr logging sum output](images/sum-log.png)
+
 ### 6.3 Kconfig Selection
 
-A Kconfig choice allows one implementation to be selected at build time:
+A Kconfig choice allows the implementation to be selected at build time:
 
 ```kconfig
 choice SUM_IMPLEMENTATION
@@ -239,7 +245,7 @@ endchoice
 source "Kconfig.zephyr"
 ```
 
-The application selects the logging implementation in `prj.conf` using:
+The logging implementation is selected in `prj.conf` using:
 
 ```text
 CONFIG_SUM_LOG=y
@@ -267,15 +273,11 @@ target_sources_ifdef(CONFIG_SUM_LOG app PRIVATE
 | Module names | Not included | Included |
 | Timestamps | Not included automatically | Supported |
 | Hexdump support | Manual | Built in |
-| Best use | Simple debugging | Larger and configurable applications |
-
-### Why Source `Kconfig.zephyr`?
-
-The application Kconfig file defines local application symbols. Sourcing `Kconfig.zephyr` includes Zephyr's main Kconfig tree so that standard kernel, driver, console, logging, and testing options remain available.
+| Best use | Simple debugging | Larger configurable applications |
 
 ### Deferred Logging
 
-With deferred logging, a logging call places a compact message in a buffer. Formatting and transmission happen later in a logging-processing context.
+With deferred logging, a logging call places a message in a buffer. Formatting and transmission occur later in a logging-processing context.
 
 This reduces the amount of time spent inside time-sensitive application code. However, it requires buffer memory, and messages can be dropped if the buffer becomes full.
 
@@ -287,7 +289,7 @@ A standalone Ztest application was created in:
 LAB_1/tests/SUM_UNIT_TEST
 ```
 
-The test suite verifies three cases:
+The test suite verifies:
 
 - `2 + 3 = 5`
 - `-8 + 3 = -5`
@@ -324,23 +326,24 @@ pass = 3, fail = 0, skip = 0, total = 3
 PROJECT EXECUTION SUCCESSFUL
 ```
 
-### How Does Ztest Run Without a User `main()`?
+![Sum Ztest results](images/sum-ztest.png)
 
-When `CONFIG_ZTEST=y` is enabled, Zephyr links its Ztest runner into the application. The Ztest runner provides the application entry point.
+### How Ztest Runs Without a User `main()`
 
-The `ZTEST` and `ZTEST_SUITE` macros register the test cases during the build. After the Zephyr kernel starts, the framework discovers and executes the registered tests automatically.
+When `CONFIG_ZTEST=y` is enabled, Zephyr links its Ztest runner into the application. The runner provides the application entry point.
 
-### West Build and Twister Comparison
+The `ZTEST` and `ZTEST_SUITE` macros register the tests, which are executed automatically after the Zephyr kernel starts.
 
-| Feature | `west build` and `west build -t run` | `west twister` |
+### West Build and Twister
+
+| Feature | `west build -t run` | `west twister` |
 | --- | --- | --- |
 | Scope | Runs one configured application | Discovers scenarios from `testcase.yaml` |
 | Platforms | Uses one selected board | Can test multiple platforms |
-| Output | Direct build and Ztest console output | Aggregated test results and reports |
-| Reports | Mainly terminal output | JSON and xUnit reports |
-| Best use | Fast local development | Regression testing and continuous integration |
+| Output | Direct console output | Aggregated results and reports |
+| Best use | Fast local testing | Regression testing and continuous integration |
 
-The sum test suite was also executed with Twister:
+The sum test suite was also executed using Twister:
 
 ```bash
 cd LAB_1
@@ -352,13 +355,13 @@ west twister \
   -v
 ```
 
-Twister reported that one of one configurations and three of three test cases passed.
+Twister reported that one of one test configurations and three of three test cases passed.
 
 ## 8. BME280 Peripheral
 
 ### 8.1 Hardware Setup
 
-The BME280 environmental sensor was connected to the nRF7002 DK using I2C. The sensor breakout is STEMMA QT compatible, and the completed setup used the following signals:
+The BME280 environmental sensor was connected to the nRF7002 DK through the STEMMA QT connector.
 
 | BME280 Connection | nRF7002 DK Connection |
 | --- | --- |
@@ -369,13 +372,13 @@ The BME280 environmental sensor was connected to the nRF7002 DK using I2C. The s
 
 ![nRF7002 DK connected to the BME280](images/8.1_hardware.jpg)
 
-The BME280 was configured at I2C address `0x77`.
+The sensor was configured at I2C address `0x77`.
 
 ### 8.2 Raw I2C Implementation
 
-The application communicates with the BME280 directly through Zephyr's I2C API rather than using Zephyr's built-in BME280 sensor driver.
+The application communicates with the sensor directly through Zephyr’s I2C API rather than using the built-in BME280 sensor driver.
 
-The following configuration options were enabled in `prj.conf`:
+The following options were enabled in `prj.conf`:
 
 ```text
 CONFIG_SENSOR=y
@@ -397,21 +400,21 @@ The BME280 was added to the Devicetree overlay:
 };
 ```
 
-The raw implementation performs the following operations:
+The application:
 
 1. Reads register `0xD0` and verifies that the chip ID is `0x60`.
-2. Reads the temperature calibration values from registers `0x88` through `0x8D`.
+2. Reads temperature calibration values from registers `0x88` through `0x8D`.
 3. Writes `0x23` to the `CTRL_MEAS` register at `0xF4`.
-4. Burst-reads the raw temperature from registers `0xFA` through `0xFC`.
-5. Combines the three register values into a 20-bit raw temperature value.
+4. Reads the raw temperature from registers `0xFA` through `0xFC`.
+5. Combines the register values into a 20-bit raw temperature value.
 6. Applies the BME280 integer temperature-compensation formula.
 7. Logs the calculated temperature every two seconds.
 
 ### 8.3 Hardware Results
 
-The initial tests produced I2C errors `-116` and `-5`. These errors indicated that the sensor was not responding correctly on the I2C bus.
+The initial tests produced I2C errors `-116` and `-5` because the sensor connection was unreliable.
 
-Correcting and reseating the sensor connections resolved the issue. The application then:
+Reseating the STEMMA QT cable resolved the issue. The application then:
 
 - Detected chip ID `0x60`.
 - Read the temperature calibration values.
@@ -430,15 +433,14 @@ A separate Ztest application was created in:
 LAB_1/tests/BME280_UNIT_TEST
 ```
 
-The tests use known calibration coefficients and simulated raw sensor values. This allows the temperature-compensation logic to be tested without requiring the physical sensor.
+The tests use known calibration coefficients and simulated raw sensor values. This allows the compensation logic to be tested without the physical sensor.
 
 The test suite verifies:
 
-- The BME280 Devicetree node exists.
-- The Devicetree node is enabled.
+- The BME280 Devicetree node exists and is enabled.
 - The configured I2C address is `0x77`.
 - The Bosch reference raw value produces `25.08 C`.
-- The calculated temperature is inside the BME280 operating range.
+- The result is within the BME280 temperature range.
 - A larger raw value produces a larger compensated temperature.
 
 The tests were executed directly in QEMU:
@@ -472,15 +474,7 @@ west twister \
   -v
 ```
 
-Twister reported:
-
-```text
-1 of 1 executed test configurations passed
-4 of 4 executed test cases passed
-0 failed
-0 errored
-0 warnings
-```
+Twister reported that one of one test configurations and four of four test cases passed, with no failures or errors.
 
 ![BME280 Twister results](images/bme280-ztest-twister.png)
 
@@ -488,4 +482,4 @@ Twister reported:
 
 `west build -t run` executes one configured test application directly in QEMU and displays its Ztest output.
 
-Twister reads `testcase.yaml`, discovers test scenarios, builds and runs them for the selected platforms, and generates structured JSON and xUnit reports. Twister is therefore more suitable for automated regression testing and continuous integration.
+Twister reads `testcase.yaml`, discovers the test scenario, builds and runs it for the selected platforms, and creates structured reports. This makes Twister more suitable for automated regression testing and continuous integration.
