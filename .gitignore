@@ -51,4 +51,8 @@ tags
 .idea
 Cellular-IoT-Fundamentals.code-workspace
 
+.DS_StoreLAB_1/build_info.yml*
+
 .DS_Store
+LAB_1/build_info.yml
+LAB_1/build_info.yml.bak
